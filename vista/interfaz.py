@@ -1,15 +1,15 @@
-from PyQt5.QtWidgets import (QVBoxLayout, QHBoxLayout,
+from PyQt5.QtWidgets import (
+    QVBoxLayout, QHBoxLayout,
     QPushButton, QScrollArea, QWidget, QButtonGroup, QLabel
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
-from controlador.controlador import (crear_botones_proveedores, load_debts,
-                                     load_proveedores, abrir_dialogo_proveedor, abrir_dialogo_deuda)
+from controlador.controlador_proveedores import crear_botones_proveedores, load_proveedores, abrir_dialogo_proveedor
+from controlador.controlador_deudas import load_debts, abrir_dialogo_deuda
 
 def ventana_principal():
     window = QWidget()
     window.setWindowTitle("Gestión de Deudas")
-    window.showMaximized()
 
     main_layout = QHBoxLayout(window)
 
@@ -31,6 +31,10 @@ def ventana_principal():
     logo_label.setAlignment(Qt.AlignLeft)
     sidebar_layout.addWidget(logo_label)
 
+    provider_buttons = []
+    group = QButtonGroup()
+    group.setExclusive(True)
+
     def update_view():
         try:
             checked_button = group.checkedButton()
@@ -39,35 +43,28 @@ def ventana_principal():
 
                 if proveedor == "__manage__":
                     load_proveedores(rows_layout, [400, 120, 120], row_height, scroll, container, window)
-                    tabs_layout.setEnabled(False)
-                    tab_pending.setVisible(False)
-                    tab_paid.setVisible(False)
                     new_debt_btn.setVisible(False)
                     new_provider_btn.setVisible(True)
+                    btn_pendientes.setVisible(False)
+                    btn_pagados.setVisible(False)
                 else:
-                    tipo = "pendientes" if tab_pending.isChecked() else "pagados"
                     id_proveedor = checked_button.property("id_proveedor")
+                    tipo = "pendientes" if btn_pendientes.isChecked() else "pagados"
                     load_debts(tipo, rows_layout, column_widths, row_height, scroll, container, id_proveedor)
-                    tabs_layout.setEnabled(True)
-                    tab_pending.setVisible(True)
-                    tab_paid.setVisible(True)
-                    new_debt_btn.setVisible(tab_pending.isChecked())
+                    new_debt_btn.setVisible(True)
                     new_provider_btn.setVisible(False)
+                    btn_pendientes.setVisible(True)
+                    btn_pagados.setVisible(True)
+                    label_proveedor.setText(f"{proveedor}")
         except Exception as e:
             print("Error en update_view:", e)
 
-    provider_buttons = []
-    group = QButtonGroup()
-    group.setExclusive(True)
-
-    # 👇 Aquí pasamos update_view como callback
     crear_botones_proveedores(sidebar_layout, group, provider_buttons, update_view)
 
-    # Forzar exclusividad manual en sidebar
     for btn in provider_buttons:
         btn.clicked.connect(lambda checked, b=btn: [
-                                                       x.setChecked(False) for x in provider_buttons if x != b
-                                                   ] or b.setChecked(True))
+            x.setChecked(False) for x in provider_buttons if x != b
+        ] or b.setChecked(True))
 
     sidebar_scroll.setWidget(sidebar_container)
     sidebar_scroll.setFixedWidth(250)
@@ -76,7 +73,6 @@ def ventana_principal():
     # --- Área principal ---
     main_area = QVBoxLayout()
 
-    # Título arriba del área principal
     titulo_principal = QLabel("Gestor de Deudas")
     titulo_principal.setAlignment(Qt.AlignCenter)
     titulo_principal.setFixedHeight(80)
@@ -88,50 +84,28 @@ def ventana_principal():
     """)
     main_area.addWidget(titulo_principal)
 
-    # Pestañas superiores
-    tabs_layout = QHBoxLayout()
-    tabs_group = QButtonGroup()
-    tabs_group.setExclusive(True)
+    # Texto dinámico para proveedor (centrado)
+    label_proveedor = QLabel("Seleccione un proveedor")
+    label_proveedor.setAlignment(Qt.AlignCenter)
+    label_proveedor.setStyleSheet("""
+        font-size: 30px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin: 10px;
+    """)
+    main_area.addWidget(label_proveedor)
 
-    tab_pending = QPushButton("Pendientes")
-    tab_paid = QPushButton("Pagados")
+    # Layout horizontal para Nueva deuda + pendientes/pagados
+    deuda_layout = QHBoxLayout()
+    deuda_layout.setAlignment(Qt.AlignLeft)
 
-    for tab in (tab_pending, tab_paid):
-        tab.setCheckable(True)
-        tab.setStyleSheet("""
-            QPushButton {
-                background-color: transparent;
-                color: black;
-                font-size: 25px;
-                border: none;
-                padding: 6px 12px;
-            }
-            QPushButton:checked {
-                color: #3498db;
-                font-weight: bold;
-                border-bottom: 2px solid #3498db;
-            }
-            QPushButton:hover {
-                color: #2980b9;
-            }
-        """)
-        tabs_layout.addWidget(tab)
-        tabs_group.addButton(tab)
-
-    # Forzar exclusividad manual en pestañas
-    tab_pending.clicked.connect(lambda: tab_paid.setChecked(False))
-    tab_paid.clicked.connect(lambda: tab_pending.setChecked(False))
-
-    tab_pending.setChecked(True)
-    main_area.addLayout(tabs_layout)
-
-    # Botón "Nueva deuda"
     new_debt_btn = QPushButton("➕ Nueva deuda")
+    new_debt_btn.setFixedWidth(160)
     new_debt_btn.setStyleSheet("""
         QPushButton {
             background-color: #2ecc71;
             color: white;
-            font-size: 20px;
+            font-size: 18px;
             border: none;
             border-radius: 4px;
             padding: 6px 12px;
@@ -140,11 +114,57 @@ def ventana_principal():
             background-color: #27ae60;
         }
     """)
-    main_area.addWidget(new_debt_btn, alignment=Qt.AlignLeft)
+
+    btn_pendientes = QPushButton("Pendientes")
+    btn_pagados = QPushButton("Pagados")
+
+    for btn in (btn_pendientes, btn_pagados):
+        btn.setCheckable(True)
+        btn.setFixedWidth(150)
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: transparent;
+                color: black;
+                font-size: 18px;
+                border: none;
+                padding: 6px 12px;
+                text-align: left;
+            }
+            QPushButton:checked {
+                background-color: #3498db;
+                color: white;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+                color: white;
+            }
+        """)
+
+    # Exclusividad manual (como la sidebar)
+    def exclusividad_deudas(clicked_btn):
+        for b in (btn_pendientes, btn_pagados):
+            if b != clicked_btn:
+                b.setChecked(False)
+        clicked_btn.setChecked(True)
+        update_view()
+
+    btn_pendientes.clicked.connect(lambda: exclusividad_deudas(btn_pendientes))
+    btn_pagados.clicked.connect(lambda: exclusividad_deudas(btn_pagados))
+
+    btn_pendientes.setChecked(True)
+
+    deuda_layout.addWidget(new_debt_btn)
+    deuda_layout.addWidget(btn_pendientes)
+    deuda_layout.addWidget(btn_pagados)
+
+    main_area.addLayout(deuda_layout)
+
     new_debt_btn.clicked.connect(lambda: abrir_dialogo_deuda(
         window,
         group.checkedButton().property("id_proveedor")
     ))
+
     # Botón "Nuevo proveedor"
     new_provider_btn = QPushButton("➕ Nuevo proveedor")
     new_provider_btn.setStyleSheet("""
@@ -160,7 +180,7 @@ def ventana_principal():
             background-color: #2980b9;
         }
     """)
-    new_provider_btn.setVisible(False)  # oculto por defecto
+    new_provider_btn.setVisible(False)
     main_area.addWidget(new_provider_btn, alignment=Qt.AlignLeft)
     new_provider_btn.clicked.connect(lambda: abrir_dialogo_proveedor(window))
 
@@ -178,28 +198,25 @@ def ventana_principal():
     row_height = 35
 
     window.group = group
-    window.tab_pending = tab_pending
-    window.tab_paid = tab_paid
     window.rows_layout = rows_layout
     window.scroll = scroll
     window.container = container
     window.column_widths = column_widths
     window.row_height = row_height
+    window.btn_pendientes = btn_pendientes
+    window.btn_pagados = btn_pagados
 
     for btn in provider_buttons:
         btn.clicked.connect(update_view)
-
-    tab_pending.clicked.connect(update_view)
-    tab_paid.clicked.connect(update_view)
 
     # Inicializar tabla
     update_view()
 
     main_area.addWidget(scroll)
 
-    # Añadir sidebar y área principal
     main_layout.addWidget(sidebar_scroll)
     main_layout.addLayout(main_area)
 
+    window.showMaximized()
     window.show()
     return window
