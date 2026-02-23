@@ -172,7 +172,7 @@ def abrir_dialogo_deuda(window, id_proveedor, deuda=None):
     banco_layout = QHBoxLayout()
     for idx, banco in enumerate(bancos):
         rb = QRadioButton(banco)
-        banco_group.addButton(rb, idx)  # 👈 asignamos id único
+        banco_group.addButton(rb, idx)
         banco_layout.addWidget(rb)
         if deuda and deuda[5] == banco:
             rb.setChecked(True)
@@ -212,7 +212,8 @@ def abrir_dialogo_deuda(window, id_proveedor, deuda=None):
             return
 
         # Validar número de letra único
-        if not comprobar_numeros_de_letra(letra_edit.text()):
+        id_deuda = None if not deuda else deuda[0]
+        if not comprobar_numeros_de_letra(letra_edit.text(), id_deuda):
             QMessageBox.warning(dialog, "Error", "El número de letra ya existe.")
             return
 
@@ -597,7 +598,7 @@ def load_debts(tipo, rows_layout, column_widths, row_height, scroll, container, 
     total_row.setContentsMargins(10, 0, 0, 0)  # margen izquierdo para que no quede pegado
     total_row.setAlignment(Qt.AlignLeft)  # alinear todo a la izquierda
 
-    label_total = QLabel(f"TOTAL PEN: {total_pen:,.2f} | TOTAL USD: {total_usd:,.2f}")
+    label_total = QLabel(f"TOTAL PEN: {total_pen:,.2f}      |      TOTAL USD: {total_usd:,.2f}")
     label_total.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
     label_total.setStyleSheet("font-weight: bold; font-size: 16px; color: #2c3e50; margin:5px")
 

@@ -21,15 +21,16 @@ def validador_de_monto_numerico(monto):
     else:
         return True
 
-def comprobar_numeros_de_letra(numero_de_letra):
+def comprobar_numeros_de_letra(numero_de_letra, id_deuda=None):
     if numero_de_letra == "----------":
         return True
+
     with sqlite3.connect("data/gestor_deudas.db") as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT numero_de_letra FROM Deudas')
-        resultados = cursor.fetchall()
-    # recorrer todos los resultados
-    for resultado in resultados:
-        if numero_de_letra == resultado[0]:
-            return False
-    return True
+        if id_deuda is None:
+            cursor.execute("SELECT COUNT(*) FROM Deudas WHERE numero_de_letra = ?", (numero_de_letra,))
+        else:
+            cursor.execute("SELECT COUNT(*) FROM Deudas WHERE numero_de_letra = ? AND id_deuda != ?", (numero_de_letra, id_deuda))
+        existe = cursor.fetchone()[0]
+
+    return existe == 0
