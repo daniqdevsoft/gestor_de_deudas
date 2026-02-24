@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from controlador.controlador_proveedores import crear_botones_proveedores, load_proveedores, abrir_dialogo_proveedor
 from controlador.controlador_deudas import load_debts, abrir_dialogo_deuda
+from controlador.controlador_planeador import load_planeador
 
 def ventana_principal():
     window = QWidget()
@@ -47,6 +48,18 @@ def ventana_principal():
                     new_provider_btn.setVisible(True)
                     btn_pendientes.setVisible(False)
                     btn_pagados.setVisible(False)
+                    label_proveedor.setText("Gestión de Proveedores")
+
+
+                elif proveedor == "__planeador__":
+                    # Vista del Planeador con calendario
+                    load_planeador(rows_layout, [], row_height, scroll, container)
+                    new_debt_btn.setVisible(False)
+                    new_provider_btn.setVisible(False)
+                    btn_pendientes.setVisible(False)
+                    btn_pagados.setVisible(False)
+                    label_proveedor.setText("Planeador")
+
                 else:
                     id_proveedor = checked_button.property("id_proveedor")
                     tipo = "pendientes" if btn_pendientes.isChecked() else "pagados"
@@ -59,7 +72,14 @@ def ventana_principal():
         except Exception as e:
             print("Error en update_view:", e)
 
-    crear_botones_proveedores(sidebar_layout, group, provider_buttons, update_view)
+    # Crear botones de proveedores + gestionar + planeador
+    crear_botones_proveedores(
+        sidebar_layout,
+        group,
+        provider_buttons,
+        update_view,   # callback para gestionar proveedores
+        update_view    # callback para planeador
+    )
 
     for btn in provider_buttons:
         btn.clicked.connect(lambda checked, b=btn: [

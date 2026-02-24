@@ -1,10 +1,10 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QDateEdit,
-    QRadioButton, QButtonGroup, QPushButton, QFrame, QApplication, QTextEdit, QMessageBox,QSpacerItem, QSizePolicy
+    QRadioButton, QButtonGroup, QPushButton, QFrame, QApplication, QTextEdit, QMessageBox, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtGui import QDesktopServices
 from PyQt5.QtCore import Qt, QUrl, QDate
-from modelo.database import (consultar_nombre_de_proveedor,consulta_de_deudas_pagadas,consulta_de_deudas_pendientes,
+from modelo.database import (consulta_de_deudas_pagadas,consulta_de_deudas_pendientes,
                              insertar_deuda, actualizar_deuda, eliminar_deuda,marcar_deuda_pagada)
 from utils.helpers import validador_de_fecha_vencimiento, validador_de_monto_numerico, comprobar_numeros_de_letra
 from datetime import datetime, date
@@ -249,14 +249,16 @@ def load_debts(tipo, rows_layout, column_widths, row_height, scroll, container, 
         for j, dato in enumerate(deuda[:6]):
             if j == 1 and tipo == "pendientes":  # columna fecha de vencimiento
                 try:
-                    fecha_venc = datetime.strptime(str(dato), "%Y-%m-%d").date()
+                    fecha_cambiada = datetime.strptime(str(dato), "%Y-%m-%d")
+                    fecha_d_m_a = fecha_cambiada.strftime("%d-%m-%Y")
+                    fecha_venc = fecha_cambiada.date()
                     dias_restantes = (fecha_venc - date.today()).days
                     if dias_restantes > 0:
-                        texto = f"{dato} ({dias_restantes} días)"
+                        texto = f"{fecha_d_m_a} ({dias_restantes} días)"
                     elif dias_restantes == 0:
-                        texto = f"{dato} (vence hoy)"
+                        texto = f"{fecha_d_m_a} (vence hoy)"
                     else:
-                        texto = f"{dato} (vencida)"
+                        texto = f"{fecha_d_m_a} (vencida)"
                 except Exception:
                     texto = str(dato)
                 label = QLabel(texto)
@@ -331,7 +333,9 @@ def load_debts(tipo, rows_layout, column_widths, row_height, scroll, container, 
 
         else:
             fecha_pago = deuda[6]
-            label_pago = QLabel(str(fecha_pago))
+            fecha_cambiada = datetime.strptime(fecha_pago, "%Y-%m-%d")
+            fecha_d_m_a = fecha_cambiada.strftime("%d-%m-%Y")
+            label_pago = QLabel(str(fecha_d_m_a))
             label_pago.setAlignment(Qt.AlignCenter)
             label_pago.setFixedHeight(row_height)
             options_layout = QHBoxLayout()
@@ -339,6 +343,7 @@ def load_debts(tipo, rows_layout, column_widths, row_height, scroll, container, 
             options_layout.setAlignment(Qt.AlignCenter)
             options_layout.addWidget(label_pago)
             options_frame.setLayout(options_layout)
+            label_pago.setStyleSheet("font-size : 15px;")
 
             observacion = deuda[7]
 

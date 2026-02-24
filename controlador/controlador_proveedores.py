@@ -4,7 +4,14 @@ from modelo.database import (consulta_de_proveedores, consulta_de_proveedores_ac
                              editar_proveedor,crear_proveedor,actualizar_estado_proveedor)
 from controlador.controlador_utils import recargar_vista
 
-def crear_botones_proveedores(sidebar_layout, group, provider_buttons, abrir_gestion_callback, sidebar_button_height=35):
+def crear_botones_proveedores(
+    sidebar_layout,
+    group,
+    provider_buttons,
+    abrir_gestion_callback,
+    abrir_planeador_callback=None,
+    sidebar_button_height=35
+):
     # Botón especial para gestionar proveedores
     sidebar_layout.addSpacing(8)
     btn_manage = QPushButton("Gestionar proveedores")
@@ -38,6 +45,40 @@ def crear_botones_proveedores(sidebar_layout, group, provider_buttons, abrir_ges
 
     # Conectar el botón a la función que abre gestión de proveedores
     btn_manage.clicked.connect(abrir_gestion_callback)
+
+    # --- Botón Planeador (entre gestionar y proveedores) ---
+    sidebar_layout.addSpacing(8)
+    btn_planeador = QPushButton("Planeador")
+    btn_planeador.setCheckable(True)
+    btn_planeador.setFixedHeight(sidebar_button_height)
+    btn_planeador.setMinimumWidth(180)
+    btn_planeador.setProperty("nombre_proveedor", "__planeador__")
+    btn_planeador.setProperty("id_proveedor", None)
+    btn_planeador.setStyleSheet("""
+        QPushButton {
+            background-color: transparent;
+            color: black;
+            font-size: 20px;
+            border: none;
+            text-align: left;
+            padding-left: 10px;
+        }
+        QPushButton:checked {
+            color: #3498db;
+            font-weight: bold;
+            background-color: #ecf0f1;
+        }
+        QPushButton:hover {
+            color: #2980b9;
+            background-color: #f2f2f2;
+        }
+    """)
+    sidebar_layout.addWidget(btn_planeador)
+    provider_buttons.append(btn_planeador)
+    group.addButton(btn_planeador)
+
+    if abrir_planeador_callback:
+        btn_planeador.clicked.connect(abrir_planeador_callback)
 
     # Botones de proveedores reales
     proveedores = consulta_de_proveedores_activos()  # debería devolver [(id, nombre), ...]

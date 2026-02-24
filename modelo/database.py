@@ -111,18 +111,40 @@ def marcar_deuda_pagada(id_deuda):
     fecha = date.today()
     with sqlite3.connect(DB_NAME) as conn:
         cursor = conn.cursor()
-
         # 1. Actualizar estado en Deudas
         cursor.execute("""
             UPDATE Deudas
             SET estado_de_pago = 1
             WHERE id_deuda = ?
         """, (id_deuda,))
-
         # 2. Insertar registro en Pagado
         cursor.execute("""
             INSERT INTO Pagado (id_deuda, fecha_de_pago)
             VALUES (?, ?)
         """, (id_deuda, fecha))
-
         conn.commit()
+
+def consulta_para_planeador():
+    deudas_dict = {}
+
+    with sqlite3.connect(DB_NAME) as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT d.fecha_de_vencimiento, p.nombre, d.monto, d.moneda
+            FROM Deudas d
+            JOIN Proveedor p ON d.id_proveedor = p.id_proveedor
+            WHERE estado_de_pago = 0
+        """)
+
+        for fecha, proveedor, monto, moneda in cursor.fetchall():
+            fecha_str = str(fecha)
+            if moneda == "PEN":
+                descripcion = f"{proveedor} - {monto:.2f} PEN"
+            else:
+                descripcion = f"{proveedor} - {monto:.2f} USD"
+
+            if fecha_str not in deudas_dict:
+                deudas_dict[fecha_str] = []
+            deudas_dict[fecha_str].append(descripcion)
+
+    return deudas_dict
